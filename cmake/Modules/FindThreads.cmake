@@ -156,41 +156,8 @@ ELSE()
 
     ENDIF(NOT THREADS_HAVE_PTHREAD_ARG)
 
-    IF(NOT CMAKE_HAVE_THREADS_LIBRARY)
-      # If we did not found -lpthread, -lpthread, or -lthread, look for -pthread
-      IF("THREADS_HAVE_PTHREAD_ARG" MATCHES "^THREADS_HAVE_PTHREAD_ARG")
-        MESSAGE(STATUS "Check if compiler accepts -pthread")
-        TRY_RUN(THREADS_PTHREAD_ARG THREADS_HAVE_PTHREAD_ARG
-          ${CMAKE_BINARY_DIR}
-          ${CMAKE_ROOT}/Modules/CheckForPthreads.c
-          CMAKE_FLAGS -DLINK_LIBRARIES:STRING=-pthread
-          COMPILE_OUTPUT_VARIABLE OUTPUT)
-
-        IF(THREADS_HAVE_PTHREAD_ARG)
-          IF(THREADS_PTHREAD_ARG MATCHES "^2$")
-            SET(Threads_FOUND TRUE)
-            MESSAGE(STATUS "Check if compiler accepts -pthread - yes")
-          ELSE()
-            MESSAGE(STATUS "Check if compiler accepts -pthread - no")
-            FILE(APPEND
-              ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
-              "Determining if compiler accepts -pthread returned ${THREADS_PTHREAD_ARG} instead of 2. The compiler had the following output:\n${OUTPUT}\n\n")
-          ENDIF()
-        ELSE()
-          MESSAGE(STATUS "Check if compiler accepts -pthread - no")
-          FILE(APPEND
-            ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
-            "Determining if compiler accepts -pthread failed with the following output:\n${OUTPUT}\n\n")
-        ENDIF()
-
-      ENDIF("THREADS_HAVE_PTHREAD_ARG" MATCHES "^THREADS_HAVE_PTHREAD_ARG")
-
-      IF(THREADS_HAVE_PTHREAD_ARG)
-        SET(Threads_FOUND TRUE)
-        SET(CMAKE_THREAD_LIBS_INIT "-pthread")
-      ENDIF()
-
-    ENDIF(NOT CMAKE_HAVE_THREADS_LIBRARY)
+    SET(Threads_FOUND TRUE)
+    SET(CMAKE_THREAD_LIBS_INIT "-pthread")
   ENDIF(CMAKE_HAVE_PTHREAD_H)
 ENDIF()
 
