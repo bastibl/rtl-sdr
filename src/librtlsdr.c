@@ -28,6 +28,11 @@
 #endif
 
 #include <libusb.h>
+#include <fcntl.h>
+
+#include <android/log.h>
+#define  LOG_TAG    "LibUsb"
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 /*
  * All libusb callback functions should be marked with the LIBUSB_CALL macro
@@ -1455,45 +1460,82 @@ int rtlsdr_open_android(rtlsdr_dev_t **out_dev, uint32_t index, int fd, const ch
 	memset(dev, 0, sizeof(rtlsdr_dev_t));
 	memcpy(dev->fir, fir_default, sizeof(fir_default));
 
-	r = libusb_init(&dev->ctx);
-	if(r < 0){
-		free(dev);
-		return -1;
-	}
+  // libusb_init(&dev->ctx);
+  // libusb_set_option(dev->ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
+  // libusb_wrap_sys_device(dev->ctx, (intptr_t)fd, &dev->devh);
+
+  libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
+
+  r = libusb_set_option(NULL, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
+  if (r != LIBUSB_SUCCESS) {
+    LOGD("libusb_set_option failed: %d\n", r);
+    return -1;
+  } else {
+    LOGD("libusb_set_option success\n");
+  }
+
+  r = libusb_init(&dev->ctx);
+  if (r < 0) {
+    LOGD("libusb_init failed: %d\n", r);
+    return r;
+  } else {
+    LOGD("libusb_init success\n");
+  }
+
+  int fd2 = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+  if (fd2 < 0) { r = -errno; goto err; }
+
+  r = libusb_wrap_sys_device(dev->ctx, (intptr_t)fd2, &dev->devh);
+  if (r < 0) {
+    LOGD("libusb_wrap_sys_device failed: %d\n", r);
+    return r;
+  } else if (dev->devh == NULL) {
+    LOGD("libusb_wrap_sys_device returned invalid handle\n");
+    return r;
+  } else {
+    LOGD("libusb_wrap_sys_device success\n");
+  }
 
 	dev->dev_lost = 1;
 
-    device = libusb_get_device2(dev->ctx, usbfsPath);
-    
-	r = libusb_open2(device, &dev->devh, fd);
-	if (r < 0) {
-		libusb_free_device_list(list, 1);
-		fprintf(stderr, "usb_open error %d\n", r);
-		if(r == LIBUSB_ERROR_ACCESS)
-			fprintf(stderr, "Please fix the device permissions, e.g. "
-			"by installing the udev rules file rtl-sdr.rules\n");
-		goto err;
-	}
+	// r = libusb_init(&dev->ctx);
+	// if(r < 0){
+	// 	free(dev);
+	// 	return -1;
+	// }
+	//
+	//
+  //     device = libusb_get_device2(dev->ctx, usbfsPath);
+	//    
+	// r = libusb_open2(device, &dev->devh, fd);
+	// if (r < 0) {
+	// 	libusb_free_device_list(list, 1);
+	// 	fprintf(stderr, "usb_open error %d\n", r);
+	// 	if(r == LIBUSB_ERROR_ACCESS)
+	// 		fprintf(stderr, "Please fix the device permissions, e.g. "
+	// 		"by installing the udev rules file rtl-sdr.rules\n");
+	// 	goto err;
+	// }
 
-	if (libusb_kernel_driver_active(dev->devh, 0) == 1) {
-		dev->driver_active = 1;
-
-#ifdef DETACH_KERNEL_DRIVER
-		if (!libusb_detach_kernel_driver(dev->devh, 0)) {
-			fprintf(stderr, "Detached kernel driver\n");
-		} else {
-			fprintf(stderr, "Detaching kernel driver failed!");
-			goto err;
-		}
-#else
-		fprintf(stderr, "\nKernel driver is active, or device is "
-				"claimed by second instance of librtlsdr."
-				"\nIn the first case, please either detach"
-				" or blacklist the kernel module\n"
-				"(dvb_usb_rtl28xxu), or enable automatic"
-				" detaching at compile time.\n\n");
-#endif
-	}
+// 	if (libusb_kernel_driver_active(dev->devh, 0) == 1) {
+// 		dev->driver_active = 1;
+//
+// #ifdef DETACH_KERNEL_DRIVER
+// 		if (!libusb_detach_kernel_driver(dev->devh, 0)) {
+// 			fprintf(stderr, "Detached kernel driver\n");
+// 		} else {
+// 			fprintf(stderr, "Detaching kernel driver failed!");
+// 			goto err;
+// 		}
+// #else
+// 		fprintf(stderr, "\nKernel driver is active, or device is "
+// 				"claimed by second instance of librtlsdr."
+// 				"\nIn the first case, please either detach"
+// 				" or blacklist the kernel module\n"
+// 				"(dvb_usb_rtl28xxu), or enable automatic"
+// 				" detaching at compile time.\n\n");
+// #endif
+// 	}
 
 	r = libusb_claim_interface(dev->devh, 0);
 	if (r < 0) {
