@@ -1441,7 +1441,7 @@ int rtlsdr_get_index_by_serial(const char *serial)
 	return -3;
 }
 
-int rtlsdr_open_android(rtlsdr_dev_t **out_dev, uint32_t index, int fd, const char* usbfsPath)
+int rtlsdr_open_android(rtlsdr_dev_t **out_dev, uint32_t index, int fd)
 {
 	int r;
 	int i;
