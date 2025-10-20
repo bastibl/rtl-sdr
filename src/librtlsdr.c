@@ -1464,7 +1464,7 @@ int rtlsdr_open_android(rtlsdr_dev_t **out_dev, uint32_t index, int fd)
   // libusb_set_option(dev->ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
   // libusb_wrap_sys_device(dev->ctx, (intptr_t)fd, &dev->devh);
 
-  libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
+  // libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
 
   r = libusb_set_option(NULL, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
   if (r != LIBUSB_SUCCESS) {
